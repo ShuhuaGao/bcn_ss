@@ -24,7 +24,7 @@ Packages:
 
 + [networkx]( https://pypi.org/project/networkx/ ) required for our graphical approach
 + [numpy]( https://pypi.org/project/numpy/ ) required for the algebraic approach
-+ [graphviz]( https://pypi.org/project/graphviz/ ) (optional) required for visualization of graphs and trees as shown in our paper. This is optional: if you don't want visualization, just set the variable `to_visualize` to `False` in related program files. By default, the variable `to_visualize` is `False`.
++ [pygraphviz](https://pypi.org/project/pygraphviz/ ) (optional) required for visualization of graphs and trees as shown in our paper. This is optional: if you don't want visualization, just set the variable `to_visualize` to `False` in related program files. By default, the variable `to_visualize` is `False`.
 
 **How to run**
 
