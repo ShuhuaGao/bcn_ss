@@ -27,21 +27,23 @@ def read_network(file: str) -> Tuple[int, int, List[int]]:
         line = f.readline().strip()
         assert line, f'network transition matrix must be provided!'
         numbers = line.split()
-        assert len(numbers) == M * N, f'The transition matrix must have {M * N} columns'
+        assert len(numbers) == M * \
+            N, f'The transition matrix must have {M * N} columns'
         L = [int(num) for num in numbers]
         for i in L:
             assert 1 <= i <= N, f'All integers in the network transition matrix must be in range [1, {N}]'
         return n, m, L
 
 
-def visualize(g: nx.DiGraph, to_file: str, layout: str='fdp', **kwargs):
+def visualize(g: nx.DiGraph, to_file: str, layout: str = 'fdp', **kwargs):
     from networkx.drawing.nx_agraph import to_agraph
     import pygraphviz
     g.graph['edge'] = {'arrowsize': '0.4', 'splines': 'curved'}
-    g.graph['node'] = {'shape': 'circle', 'fontsize': '10', 'width': '0.2', 'margin': 0}
-    g.graph['graph'] = {'scale': 1, 'nodesep': 0.1, 'ranksep': 0.1, 'margin': 0}
+    g.graph['node'] = {'shape': 'circle',
+                       'fontsize': '10', 'width': '0.2', 'margin': 0}
+    g.graph['graph'] = {'scale': 1, 'nodesep': 0.1,
+                        'ranksep': 0.1, 'margin': 0}
     ag: pygraphviz.agraph.AGraph = to_agraph(g)
     # ag.node_attr['nodesep'] = 0.1
     ag.layout(layout)
     ag.draw(to_file)
-

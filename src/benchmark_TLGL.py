@@ -1,5 +1,5 @@
 """
-Benchmark the performance of our approach against others using the Ara operon network.
+Benchmark the performance of our approach against others using the TLGL network.
 
 The GYQ approach refers to
 Guo, Yuqian, Pan Wang, Weihua Gui, and Chunhua Yang. "Set stability and set stabilization of Boolean control networks
@@ -17,45 +17,7 @@ from algorithm.utils import read_network
 import random
 from typing import List, Set, Callable
 import time
-
-# the following two functions are used to calculate the stage cost according to our definition
-
-
-def inverse_map(i: int, n: int):
-    """
-    Accumulative STP of logical variables is bijective.
-    Given a result i (\delta_{2^n}^i), find the corresponding logical values.
-
-    :return a list of 0/1
-    """
-    r = []
-    while n > 0:
-        if i % 2 == 0:
-            r.append(0)
-            i = i // 2
-        else:
-            r.append(1)
-            i = (i + 1) // 2
-        n = n - 1
-    r.reverse()
-    return r
-
-
-def g(i, k):
-    """
-    Stage cost
-
-    :param i: state
-    :param k: control
-    :return: the cost
-    """
-    n = 9
-    m = 4
-    X = inverse_map(i, n)
-    U = inverse_map(k, m)
-    A = [0, 16, 40, 44, 28, 5, 18, 48, 24]
-    B = [0, 48, 38, 12]
-    return sum(a * x for a, x in zip(A, X)) + sum(b * u for b, u in zip(B, U))
+import numpy as np
 
 
 def compute_LCIS(m: int, n: int, L: List[int], M_set: Set[int], Solver):
@@ -82,6 +44,51 @@ def compute_time_optimal_stabilizer(m: int, n: int, L: List[int], M_set: Set[int
     return K, t
 
 
+def generate_M_set(expected_M_set_size: int):
+    M_set = set()
+    while len(M_set) < expected_M_set_size:
+        M_set = {50130, 50642, 58322, 58834, 65279, 65535}  # fix points
+        M_set.update(random.sample(range(1, 2 ** n + 1),
+                                   k=expected_M_set_size - len(M_set)))
+    return M_set
+
+
+def compute_fixed_points(m, n, L):
+    """
+    Find the fixed points of the BCN.
+    A state is called a fixed point if it can transit to itself by a certain input.
+    """
+    M = 2 ** m
+    N = 2 ** n
+    fps = []
+    for i in range(1, N + 1):
+        for k in range(1, M + 1):
+            blk = L[(k - 1) * N: k * N]
+            j = blk[i - 1]
+            if j == i:
+                fps.append(i)
+                print('FP: ', i)
+                break
+    return fps
+
+
+N = 2 ** 16
+M = 2 ** 3
+Q = np.random.uniform(0, 10, N)
+R = np.random.uniform(0, 10, M)
+
+
+def g(i, k):
+    """
+    Stage cost
+
+    :param i: state
+    :param k: control
+    :return: the cost
+    """
+    return Q[i - 1] + R[k - 1]
+
+
 def compute_general_optimal_stabilizer(m: int, n: int, L: List[int], M_set: Set[int], g: Callable[[int, int], float], Solver):
     ts = time.time()
     solver = Solver(m, n, L, M_set)
@@ -90,25 +97,18 @@ def compute_general_optimal_stabilizer(m: int, n: int, L: List[int], M_set: Set[
     return K, t
 
 
-def generate_M_set(expected_M_set_size: int):
-    M_set = set()
-    while len(M_set) < expected_M_set_size:
-        M_set = {9, 265, 320, 352, 384, 472, 480, 504, 512}
-        M_set.update(random.sample(range(1, 2 ** n + 1),
-                                   k=expected_M_set_size - len(M_set)))
-    return M_set
-
-
 if __name__ == '__main__':
-    seed = 123
+    seed = 1
     random.seed(seed)    # to reproduce results
     n_runs = 20
     print(
         f'Experiment with random seed {seed} and {n_runs} runs for each task.')
-    n, m, L = read_network('./networks/ara_operon.txt')
-    expected_M_set_size = 40
+    n, m, L = read_network('./networks/T_LGL.assr')
+    expected_M_set_size = 1000
     print('The size of M set is ', expected_M_set_size)
-
+    print("""NOTE: the GYQ approach will take extremely long time (possibly days).
+        To test our approach only, set 'enable_GYQ = False'""")
+    enable_GYQ = False
     print('Task 1: compute LCIS')
     t1 = []
     t2 = []
@@ -116,19 +116,23 @@ if __name__ == '__main__':
     for r in range(n_runs):
         print(f' -Run {r}')
         M_set = generate_M_set(expected_M_set_size)
-        _, t = compute_LCIS(m, n, L, M_set, GraphicalViewSolver)
+        LCIS1, t = compute_LCIS(m, n, L, M_set, GraphicalViewSolver)
         print(f'\tOur approach (seconds): {t}')
         t1.append(t)
-        _, t = compute_LCIS(m, n, L, M_set, GYQSolver)
-        print(f'\tGYQ approach (seconds): {t}')
-        t2.append(t)
-        _, t = compute_LCIS(m, n, L, M_set, LRJSolver)
+        LCIS3, t = compute_LCIS(m, n, L, M_set, LRJSolver)
         print(f'\tLRJ approach (seconds): {t}')
+        assert len(set(LCIS1) ^ LCIS3) == 0
         t3.append(t)
+        if enable_GYQ:
+            _, t = compute_LCIS(m, n, L, M_set, GYQSolver)
+            print(f'\tGYQ approach (seconds): {t}')
+            t2.append(t)
+
     print(' -Average time')
     print(f'\tOur approach (seconds): {sum(t1) / len(t1): .4f}')
-    print(f'\tGYQ approach (seconds): {sum(t2) / len(t2): .4f}')
     print(f'\tLRJ approach (seconds): {sum(t3) / len(t3): .4f}')
+    if enable_GYQ:
+        print(f'\tGYQ approach (seconds): {sum(t2) / len(t2): .4f}')
 
     print('Task 2: check stabilizability')
     t1 = []
@@ -140,12 +144,14 @@ if __name__ == '__main__':
             m, n, L, M_set, GraphicalViewSolver)
         print(f'\tOur approach (seconds): {t}')
         t1.append(t)
-        __, t = check_global_stabilizability(m, n, L, M_set, GYQSolver)
-        print(f'\tGYQ approach (seconds): {t}')
-        t2.append(t)
+        if enable_GYQ:
+            __, t = check_global_stabilizability(m, n, L, M_set, GYQSolver)
+            print(f'\tGYQ approach (seconds): {t}')
+            t2.append(t)
     print(' -Average time')
-    print(f'\tOur approach (seconds): {sum(t1) / len(t1): .3f}')
-    print(f'\tGYQ approach (seconds): {sum(t2) / len(t2): .3f}')
+    print(f'\tOur approach (seconds): {sum(t1) / len(t1): .4f}')
+    if enable_GYQ:
+        print(f'\tGYQ approach (seconds): {sum(t2) / len(t2): .4f}')
 
     print('Task 3: time-optimal stabilization')
     t1 = []
@@ -157,12 +163,14 @@ if __name__ == '__main__':
             m, n, L, M_set, GraphicalViewSolver)
         print(f'\tOur approach (seconds): {t}')
         t1.append(t)
-        _, t = compute_time_optimal_stabilizer(m, n, L, M_set, GYQSolver)
-        print(f'\tGYQ approach (seconds): {t}')
-        t2.append(t)
+        if enable_GYQ:
+            _, t = compute_time_optimal_stabilizer(m, n, L, M_set, GYQSolver)
+            print(f'\tGYQ approach (seconds): {t}')
+            t2.append(t)
     print(' -Average time')
-    print(f'\tOur approach (seconds): {sum(t1) / len(t1): .3f}')
-    print(f'\tGYQ approach (seconds): {sum(t2) / len(t2): .3f}')
+    print(f'\tOur approach (seconds): {sum(t1) / len(t1): .4f}')
+    if enable_GYQ:
+        print(f'\tGYQ approach (seconds): {sum(t2) / len(t2): .4f}')
 
     print('Task 4: general optimal set stabilization')
     t1 = []
@@ -174,4 +182,4 @@ if __name__ == '__main__':
         print(f'\tOur approach (seconds): {t}')
         t1.append(t)
     print(' -Average time')
-    print(f'\tOur approach (seconds): {sum(t1) / len(t1): .3f}')
+    print(f'\tOur approach (seconds): {sum(t1) / len(t1): .4f}')

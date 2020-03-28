@@ -1,5 +1,6 @@
 """
-The Ara operon network example.
+The Ara operon network example: a specific trial.
+Readers may refer to this file to learn how to use our approach for set stabilization analysis.
 """
 from algorithm.proposed import GraphicalViewSolver
 from algorithm.utils import read_network
@@ -42,6 +43,7 @@ def g(i, k):
     B = [0, 48, 38, 12]
     return sum(a * x for a, x in zip(A, X)) + sum(b * u for b, u in zip(B, U))
 
+
 if __name__ == '__main__':
     random.seed(18)  # to reproduce the result
     n, m, L = read_network('./networks/ara_operon.txt')
@@ -50,7 +52,8 @@ if __name__ == '__main__':
     M_set = set()
     while len(M_set) < expected_M_set_size:
         M_set = self_loops.copy()
-        M_set.update(random.sample(range(1, 2 ** n + 1), k=expected_M_set_size - len(M_set)))
+        M_set.update(random.sample(range(1, 2 ** n + 1),
+                                   k=expected_M_set_size - len(M_set)))
     # M_set = {9, 265, 320, 352, 384, 472, 480, 504, 512}
     print('M set is ', M_set)
     solver = GraphicalViewSolver(m, n, L, M_set)
@@ -58,19 +61,22 @@ if __name__ == '__main__':
     lcis = solver.compute_largest_control_invariant_subset()
     print(f'LCIS is of size {len(lcis)}: ', lcis)
     print('Is stabilizable? ', solver.is_set_stabilizable())
+    print('Size of stability domain? ', len(solver.get_stability_domain()))
     t = solver.compute_shortest_transient_period()
     print('Network shortest transient period is: ', t)
     Ft = solver.compute_time_optimal_stabilizer()
     x0 = 11
     bft = solver.build_BFT_for_M_extended_stg()
     p_bft, u_bft = solver.get_trajectory(bft, x0)
-    print(f'Time optimal trajectory from {x0}: ', p_bft, '\n\tdriven by: ', u_bft, '\n\twith time t*: ', bft.nodes[x0]['t_star'])
+    print(f'Time optimal trajectory from {x0}: ', p_bft, '\n\tdriven by: ',
+          u_bft, '\n\twith time t*: ', bft.nodes[x0]['t_star'])
     spt = solver.build_SPT_for_M_extended_stg(g)
     p_spt, u_spt = solver.get_trajectory(spt, x0)
-    print(f'General optimal trajectory measured by g from {x0}: ', p_spt, '\n\tdriven by: ', u_spt, '\n\twith cost J*: ', spt.nodes[x0]['d_star'])
+    print(f'General optimal trajectory measured by g from {x0}: ', p_spt,
+          '\n\tdriven by: ', u_spt, '\n\twith cost J*: ', spt.nodes[x0]['d_star'])
 
-    # visualization: generate Fig. 5 in the paper
-    to_visualize = False
+    # visualization: generate Fig. 6 in the paper
+    to_visualize = True
     if to_visualize:
         from networkx.drawing.nx_agraph import to_agraph
         import pygraphviz
@@ -97,13 +103,14 @@ if __name__ == '__main__':
                 stg.nodes[p_spt[i]]['color'] = 'red'
                 stg.nodes[p_spt[i]]['width'] = large_node_size
 
-        stg.graph['edge'] = {'arrowsize': '0', 'splines': 'curved', 'arrowhead': 'none', 'penwidth': 0.1, 'color': 'gray30', 'weight': 1.2}
-        stg.graph['node'] = {'shape': 'point', 'fontsize': '10', 'width': '0.05', 'margin': 0, 'style': 'filled', 'color': 'gray52'}
-        stg.graph['graph'] = {'scale': 1, 'nodesep': 0, 'ranksep': 0, 'margin': 0, 'ratio': 0.6}
+        stg.graph['edge'] = {'arrowsize': '0', 'splines': 'curved',
+                             'arrowhead': 'none', 'penwidth': 0.1, 'color': 'gray30', 'weight': 1.2}
+        stg.graph['node'] = {'shape': 'point', 'fontsize': '10',
+                             'width': '0.05', 'margin': 0, 'style': 'filled', 'color': 'gray52'}
+        stg.graph['graph'] = {'scale': 1, 'nodesep': 0,
+                              'ranksep': 0, 'margin': 0, 'ratio': 0.6}
         ag: pygraphviz.agraph.AGraph = to_agraph(stg)
         print('ag obtained')
         ag.layout('fdp')
         print('ag layout')
         ag.draw('ara_operon.pdf')
-
-

@@ -5,6 +5,7 @@ Implementation of existing algorithms.
 from typing import List, Set, Union
 from .stp import *
 from . import bool_algebra as ba
+import time
 
 
 class GYQSolver:
@@ -12,6 +13,7 @@ class GYQSolver:
     Guo, Yuqian, Pan Wang, Weihua Gui, and Chunhua Yang. "Set stability and set stabilization of Boolean control networks
     based on invariant subsets." Automatica 61 (2015): 106-112.
     """
+
     def __init__(self, m: int, n: int, L: Iterable, M_set: Iterable):
         """
         Initialize the solver.
@@ -31,10 +33,10 @@ class GYQSolver:
         else:
             self.M_set = set(M_set)
         self.L = L
-        # the one-step controllability matrix (N-by-N)
+        # the one-step controllability matrix (N-by-N), computed by O(MN)
         self.C1 = np.zeros((self.N, self.N), dtype=np.bool_)
         for k in range(self.M):
-            blk = L[k * self.N : (k + 1) * self.N]
+            blk = L[k * self.N: (k + 1) * self.N]
             for i in range(self.N):
                 self.C1[blk[i] - 1][i] = 1
         self.M0 = np.zeros((self.N, self.N), dtype=np.bool_)
@@ -61,6 +63,7 @@ class GYQSolver:
         """
         Mc = self.M0
         for _ in range(self.q):
+            ts = time.time()
             Mc = ba.sp(ba.sp(Mc, self.C1), self.M0)
         return Mc
 
@@ -110,7 +113,7 @@ class GYQSolver:
         rs = ba.col_sum(Mc)
         return self._get_logical_sub_vectors(rs)
 
-    def compute_shortest_transient_period(self, x0: int=None) -> Union[int, None]:
+    def compute_shortest_transient_period(self, x0: int = None) -> Union[int, None]:
         """
         Get the shortest transient period.
         Proposition 5 (2).
@@ -147,7 +150,8 @@ class GYQSolver:
                 for i in determined:
                     states.remove(i)
             if states:  # some states remain undetermined
-                raise Warning(f'BCN is not globally stabilizable! Only valid initial states are considered.')
+                raise Warning(
+                    f'BCN is not globally stabilizable! Only valid initial states are considered.')
             return max(ts.values()) if ts else None
 
     def is_set_stabilizable(self, x0: int = None) -> bool:
@@ -234,5 +238,61 @@ class GYQSolver:
         return F
 
 
+class LRJSolver:
+    """
+    R. Liu, J. Lu, W. X. Zheng, and J. Kurths, “Output feedback control
+    for set stabilization of boolean control networks,” IEEE transactions on
+    neural networks and learning systems, 2019.
+    """
 
+    def __init__(self, m: int, n: int, L: Iterable, M_set: Iterable):
+        """
+        Initialize the solver.
 
+        :param m: number of control inputs
+        :param n: number of state variables
+        :param L: network transition matrix in condensed form (an integer for each column)
+        :param M_set: a given subset of the state space
+        """
+        self.m = m
+        self.n = n
+        self.M = 2 ** m
+        self.N = 2 ** n
+        self.L = L
+        self.M_set = M_set
+
+    def compute_largest_control_invariant_subset(self) -> Set[int]:
+        """
+        Compute the LCIS, where each state is represented by an integer, i.e., i -> \delta_N^i.
+        This function implements Algorithm 1 of the paper "R. Liu et. al."
+
+        :return: LCIS
+        """
+        M, N = self.M, self.N
+        # get F for each state (i.e., one-step reachable set)
+        Fs = {}
+        for i in self.M_set:
+            F = set()
+            for k in range(M):
+                blk = self.L[k * N: (k + 1) * N]
+                F.add(blk[i - 1])
+            Fs[i] = F
+        S = self.M_set  # Set
+        while True:
+            Q = set()
+            for i in S:
+                # check whether intersection is empty
+                is_empty = True
+                for j in Fs[i]:
+                    if j in S:
+                        is_empty = False
+                        break
+                if is_empty:
+                    Q.add(i)
+            # remove the states in Q from S
+            if Q:
+                for i in Q:
+                    S.remove(i)
+            else:
+                break
+        return S

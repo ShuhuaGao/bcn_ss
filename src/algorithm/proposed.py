@@ -14,6 +14,7 @@ class GraphicalViewSolver:
     """
     Algorithms for set stability/stabilization based on SCC and graph-theoretical approaches.
     """
+
     def __init__(self, m: int, n: int, L: Iterable, M_set: Iterable):
         """
         Initialize the solver.
@@ -58,7 +59,7 @@ class GraphicalViewSolver:
         for k in range(M):
             blk = L[k * N: (k + 1) * N]
             for i in range(1, N + 1):
-                j = blk[i - 1] #state i -> j by control k
+                j = blk[i - 1]  # state i -> j by control k
                 g.add_edge(i, j)
                 if 'Uij' in g.edges[i, j]:
                     g.edges[i, j]['Uij'].append(k + 1)
@@ -94,13 +95,13 @@ class GraphicalViewSolver:
                 i = Q.popleft()
                 for j in g.adj[i]:
                     if j not in bft:
-                        bft.add_node(j, t_star = bft.nodes[i]['t_star'] + 1)
+                        bft.add_node(j, t_star=bft.nodes[i]['t_star'] + 1)
                         bft.add_edge(i, j)
                         Q.append(j)
             self._bft = bft
         return self._bft
 
-    def is_set_stabilizable(self, x0: int=None) -> bool:
+    def is_set_stabilizable(self, x0: int = None) -> bool:
         """
         Check set stabilizability.
 
@@ -114,6 +115,20 @@ class GraphicalViewSolver:
             stg = self.build_stg()
             return len(bft) == len(stg) + 1
         return x0 in bft
+
+    def get_stability_domain(self) -> List[int]:
+        """
+        Compute the stability domain.
+
+        :return a list of states
+        """
+        bft = self.build_BFT_for_M_extended_stg()
+        if bft is None:
+            return []
+        # get all nodes in BFT except 0
+        sd = list(bft)
+        sd.remove(0)
+        return sd
 
     def condense(self) -> Tuple[List, nx.DiGraph]:
         """
@@ -144,7 +159,7 @@ class GraphicalViewSolver:
         for k in range(self.M):
             blk = self.L[k * self.N: (k + 1) * self.N]
             for i in self.M_set:
-                j = blk[i - 1] #state i -> j
+                j = blk[i - 1]  # state i -> j
                 if j in self.M_set:
                     g.add_edge(i, j)
         return g
@@ -166,7 +181,7 @@ class GraphicalViewSolver:
             This is the $\kappa$ function in Algorithm 2 of the paper.
             """
             if is_invariant[i] is None:
-                scc = self.M_scc_list[i] #scc: a set
+                scc = self.M_scc_list[i]  # scc: a set
                 # whether scc itself is nontrivial
                 if len(scc) > 1:
                     is_invariant[i] = True
@@ -206,12 +221,13 @@ class GraphicalViewSolver:
             g = stg.subgraph(LCIS)
             for i in g:
                 js = g.adj[i]
-                j = next(iter(js))  # we just choose one j if there are multiple
+                # we just choose one j if there are multiple
+                j = next(iter(js))
                 uij = stg.edges[i, j]['Uij'][0]
                 self._ssf[i] = uij
         return self._ssf
 
-    def compute_shortest_transient_period(self, x0: int=None) -> Union[int, None]:
+    def compute_shortest_transient_period(self, x0: int = None) -> Union[int, None]:
         """
         Get the shortest transient period for set stabilization.
         Theorem 2
@@ -226,7 +242,8 @@ class GraphicalViewSolver:
             return bft.nodes[x0]['t_star'] - 1
         if x0 is None:
             if not self.is_set_stabilizable():
-                raise Warning(f'BCN is not globally stabilizable! Only valid initial states are considered.')
+                raise Warning(
+                    f'BCN is not globally stabilizable! Only valid initial states are considered.')
             return max(bft.nodes[i]['t_star'] for i in bft) - 1
         return None
 
@@ -271,7 +288,8 @@ class GraphicalViewSolver:
         # compute the stage cost for each transition in STG, i.e., to build a weighted STG
         for i, j in stg.edges:
             Uij = stg.edges[i, j]['Uij']
-            u_star, weight = min(((u, g(i, u)) for u in Uij), key=itemgetter(1))
+            u_star, weight = min(((u, g(i, u))
+                                  for u in Uij), key=itemgetter(1))
             stg.edges[i, j].update(u_star=u_star, w=weight)
         tstg = stg.reverse(copy=False)  # transpose
         # we don't need to build the M-extended STG explicitly
@@ -281,7 +299,7 @@ class GraphicalViewSolver:
         Q = FibonacciHeap()
         nodes = {}
         rho = {}
-        nodes[0] = Q.insert((0, 0)) # (priority, vertex)
+        nodes[0] = Q.insert((0, 0))  # (priority, vertex)
         INF = float('inf')
         for v in stg:
             nodes[v] = Q.insert((INF, v))
@@ -293,10 +311,11 @@ class GraphicalViewSolver:
                 if p == 0:  # the edge connected to v0 needs no control and has zero weight
                     spt.add_edge(p, i, u_star=None, w=0)
                 else:
-                    spt.add_edge(p, i, u_star=tstg.edges[p, i]['u_star'], w=tstg.edges[p, i]['w'])
+                    spt.add_edge(
+                        p, i, u_star=tstg.edges[p, i]['u_star'], w=tstg.edges[p, i]['w'])
             successors = LCIS if i == 0 else tstg.adj[i]
             for j in successors:
-                if i == 0: # the edge connected to v0 needs no control and has zero weight
+                if i == 0:  # the edge connected to v0 needs no control and has zero weight
                     d = di
                 else:
                     d = di + tstg.edges[i, j]['w']
@@ -343,7 +362,8 @@ class GraphicalViewSolver:
         p = [x0]
         u = []
         while True:
-            i = next(iter(tree.predecessors(j)))  # edge (i, j) in the tree: j has only one parent
+            # edge (i, j) in the tree: j has only one parent
+            i = next(iter(tree.predecessors(j)))
             if i == 0:
                 break
             p.append(i)
@@ -353,6 +373,3 @@ class GraphicalViewSolver:
                 u.append(self._stg.edges[j, i]['Uij'][0])
             j = i
         return p, u
-
-
-

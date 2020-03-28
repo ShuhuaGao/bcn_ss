@@ -8,6 +8,7 @@ Please refer to the documentation of that toolbox for more details.
 import numpy as np
 from typing import Iterable
 
+
 def _left_sp(A, B):
     m, n = A.shape
     p, q = B.shape
@@ -15,7 +16,8 @@ def _left_sp(A, B):
     C = np.empty((m, k * q), dtype=np.result_type(A, B))
     for i in range(m):
         for j in range(q):
-            C[i, j * k : (j + 1) * k] = B[:, j].reshape((1, p)) @ A[i].reshape((p, k))
+            C[i, j * k: (j + 1) * k] = B[:, j].reshape((1, p)
+                                                       ) @ A[i].reshape((p, k))
     return C
 
 
@@ -29,6 +31,14 @@ def sp(A: np.ndarray, B: np.ndarray) -> np.ndarray:
 
     Time complexity:
         Suppose A is mxn and B is pxq matrix.
+        (1) If n = p, SPT degrads to normal matrix product with complexity O(mnq)
+        (2) If n = pt, the complexity is O(mpqt) with Cheng's Definition 1.1 (`sp1` in Cheng's toolbox)
+        (3) If p = nt, the complexity is O(mnqt) with Cheng's Definition 1.1 (`sp1` in Cheng's toolbox)
+        (4) Otherwise, SPT is computed by Cheng's Definition 1.2 using Kronecker product. Supposing z=lcm(n, p),
+            the complexity is O(mqz^3/(np))
+    Note that the complexity of product of two nxn matrices is assumed to be O(n^3) in the above time complexity analysis, 
+    though the highly optimized implementation in `numpy` generally runs in time between O(n^2) and O(n^3). 
+    See https://en.wikipedia.org/wiki/Matrix_multiplication#Computational_complexity for more details.
     """
     assert A.ndim == 2, 'Only 2d array (matrix) is allowed'
     assert B.ndim == 2, 'Only 2d array (matrix) is allowed'
@@ -62,6 +72,7 @@ def logical_matrix_from(L: Iterable, n: int, dtype=np.int8) -> np.ndarray:
     for j, i in enumerate(L):
         m[i - 1, j] = one
     return m
+
 
 def swap_matrix(m: int, n: int) -> np.ndarray:
     """
