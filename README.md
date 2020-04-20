@@ -4,13 +4,13 @@ This repository contains the code for the paper: Shuhua Gao, Cheng Xiang, and To
 **Organization**
 
 + The core algorithm implementation is in the folder *src/algorithm*.  Specifically, the proposed algorithms is implemented in *proposed.py*, and the existing algebraic approach is implemented in *related_work.py*. Please refer to the comments therein for more details.
-+ The network transition matrix (i.e., *L*) of the $\lambda$ switch network is stored in *src/networks/lambda_switch.txt*, and the network transition matrix of the *ara* operon network is presented in  *src/networks/ara_operon.txt*.
++ The network transition matrix (i.e., *L*) of the $\lambda$ switch network is stored in *src/networks/lambda_switch.txt*, and the network transition matrix of the *ara* operon network is presented in  *src/networks/ara_operon.assr*, and the one for the T-LGL network is given in *src/networks/T_LGL.assr*.
 + Programs to reproduce the examples in the paper are given in four files as follows,
-  + *src/example_lambda_switch.py*:  Example 1 - 4
-  + *src/example_lambda_switch_GYQ.py*: results of Example 1 - 3 with an existing algebraic approach for verification purpose
+  + *src/example_lambda_switch.py*:  Example 1, 3, and 4
+  + *src/example_lambda_switch_GYQ.py*: results of Example 1, 3 with an existing algebraic approach for verification purpose
   + *src/example_ara_operon.py*: reproduce the results for the *ara* operon network using our approach in Section VII
-  + *src/benchmark_ara_operon.py*: running time comparison with the ara operon network
-  + src/\benchmark_TLGL.py:  running time comparison with the TLGL network
+  + *src/benchmark_ara_operon.py*: running time comparison with the ara operon network in Section VII
+  + src/benchmark_TLGL.py:  running time comparison with the TLGL network in Section VII
   
 + Full-sized colored figures in the paper are provided in the folder *fig* in PDF format.
 
