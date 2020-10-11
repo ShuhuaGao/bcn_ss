@@ -1,5 +1,5 @@
 # Set Invariance and Optimal Set Stabilization of Boolean Control Networks: A Graphical Approach
-This repository contains the code for the paper: Shuhua Gao, Cheng Xiang, and Tong Heng Lee. *Set Invariance and Optimal Set Stabilization of Boolean Control Networks: A Graphical Approach* (To be published)
+This repository contains the code for the paper: Shuhua Gao, Cheng Xiang, and Tong Heng Lee. *Set Invariance and Optimal Set Stabilization of Boolean Control Networks: A Graphical Approach* 
 
 **Organization**
 
@@ -33,4 +33,10 @@ Packages:
 + To run an example, say *example_ara_operon.py*, just type `python ./example_ara_operon.py`. (Of course, you can also use any IDEs like PyCharm or Visual Studio Code as you want.)
 
 **How to cite this work**
-
+```
+@ARTICLE{9209076,  
+	author={S. {Gao} and C. {Xiang} and T. H. {Lee}},  
+	journal={IEEE Transactions on Control of Network Systems},   
+	title={Set Invariance and Optimal Set Stabilization of Boolean Control Networks: A Graphical Approach},   
+	year={2020},  volume={},  number={},  pages={1-1},}
+```
